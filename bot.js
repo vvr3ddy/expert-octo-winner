@@ -1,7 +1,10 @@
 const { Bot } = require("grammy");
 const https = require('https');
 const axios = require('axios').default;
-const bot = new Bot("BOT_API_KEY_HERE");
+const bot_api = process.env.BOT_API_KEY;
+const coin_api = process.env.COIN_API_KEY;
+
+const bot = new Bot(`${bot_api}`);
 
 
 
@@ -23,7 +26,7 @@ bot.command("price", (ctx) => {
                 const rate = res.rate;
                 const reply = `Current Listing for ${crypto} in ${currency} is:` + "\n"
                             +  `1 ${crypto} = ${rate} ${currency}.`;
-                ctx.update(reply);
+                ctx.reply(reply);
             });
     }
 });
@@ -31,7 +34,7 @@ bot.command("price", (ctx) => {
 async function fetchPrice(crypto, currency) {
     const response = await axios.get(`https://rest.coinapi.io/v1/exchangerate/${crypto}/${currency}`, {
         headers: {
-            "X-Coinapi-Key": "COIN_API_HERE"
+            "X-Coinapi-Key": `${coin_api}`
         },
     });
 
