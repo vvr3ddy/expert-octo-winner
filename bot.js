@@ -14,7 +14,7 @@ bot.command("start", (ctx) => ctx.reply("Welcome! Up and Running"));
 
 bot.command("price", (ctx) => {
     const txt = ctx.message.text;
-    const message = txt.split(" ");
+    const message = txt.toUpperCase().split(" ");
 
     if (message.length == 3) {
         ctx.reply("Please wait... Fetching data from server...")
@@ -22,21 +22,30 @@ bot.command("price", (ctx) => {
         const currency = message[2]
         fetchPrice(crypto, currency)
             .then((res) => {
-                const rate = res.rate;
-                const reply = `Current Listing for ${crypto} in ${currency} is:` + "\n"
-                    + `1 ${crypto} = ${rate} ${currency}.`;
-                bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, reply);
+                if (res.statusCode == 200) {
+                    const rate = res.data.rate;
+                    const reply = `Current Listing for ${crypto} in ${currency} is:` + "\n"
+                        + `1 ${crypto} = ${rate} ${currency}.`;
+                    bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, reply);
+                }else {
+                    bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, res);
+                }
             });
     } else if (message.length == 2) {
         const crypto = message[1]
         ctx.reply("You have provided only one currency!")
         fetchPrice(crypto, "USD")
             .then((res) => {
-                const rate = res.rate;
-                const reply = `Current Listing for ${crypto} in USD is:` + "\n"
-                    + `1 ${crypto} = ${rate} USD.`;
-                bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, reply);
-            })
+                if (res.statusCode == 200) {
+                    console.log(res.data)
+                    const rate = res.data.rate;
+                    const reply = `Current Listing for ${crypto} in USD is:` + "\n"
+                        + `1 ${crypto} = ${rate} USD.`;
+                    bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, reply);
+                } else {
+                    bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, res);
+                }
+            });
         // bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id+1, "Changed Text")
     } else if (message.length == 1) {
         console.log(message.length)
@@ -45,26 +54,25 @@ bot.command("price", (ctx) => {
             .then((res) => {
                 let coins = res.coins;
                 let topCoins = "CRYPTO in BTC";
-                // console.log(coins)
                 for (let coin of coins) {
-                    // console.log(coin.item.name);
-                    // topCoins.concat("\n"+coin.item.name + "\t" + Number.parseFloat(coin.item.price_btc).toPrecision(4))
-                    topCoins =topCoins.concat("\n", coin.item.name + "\t" + Number.parseFloat(coin.item.price_btc).toPrecision(4))
+                    topCoins = topCoins.concat("\n", coin.item.name + "\t" + Number.parseFloat(coin.item.price_btc).toPrecision(4))
                 }
-                console.log(topCoins)
-                bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id+1, topCoins)
+                bot.api.editMessageText(ctx.message.chat.id, ctx.message.message_id + 1, topCoins)
             })
     }
 });
 
 async function fetchPrice(crypto, currency) {
-    const response = await axios.get(`https://rest.coinapi.io/v1/exchangerate/${crypto}/${currency}`, {
-        headers: {
-            "X-Coinapi-Key": `${coin_api}`
-        },
-    });
-
-    return response.data;
+    try {
+        const response = await axios.get(`https://rest.coinapi.io/v1/exchangerate/${crypto}/${currency}`, {
+            headers: {
+                "X-Coinapi-Key": `${coin_api}`
+            },
+        });
+        return response;
+    } catch (error) {
+        return "INVALID CONVERSION ATTEMPT";
+    }
 }
 
 
